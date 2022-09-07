@@ -1,14 +1,15 @@
 from datetime import datetime, timedelta
 from time import sleep
-import requests
 from newsapi import NewsApiClient
-
+import requests
+import pycountry
 
 class NewsAggregator:
 
     def __init__(self):
         self.api_key = None
         self.client = None
+        self.country = "in" #Default
 
     def getApiKey(self):
         try:
@@ -31,104 +32,67 @@ class NewsAggregator:
         else:
             print("Invalid API Key")
 
+    def setCountry(self):
+        try:
+            country = input("Enter your country: ")
+            two_digit_iso_code = pycountry.countries.search_fuzzy(country)
+            two_digit_iso_code = str(two_digit_iso_code[0])
+            two_digit_iso_code = two_digit_iso_code[17:19].lower()
+            self.country = two_digit_iso_code
+            print(f"Country Changed to {country}. ISO Code: {self.country}")
+
+        except LookupError as lookupError:
+            print("Please enter a valid country!")
+        
     def getTopHeadline(self):
-        top_headlines_url = "https://newsapi.org/v2/top-headlines?country=in&apiKey={}".format(self.api_key)
-        top_headlines = requests.get(top_headlines_url).json()
-
-        print("Total Results:  ", top_headlines["totalResults"])
-
-        number_of_articles_to_print = int(input("Enter number of articles to print:\t"))
-
-        for i in range(number_of_articles_to_print):
-            print("{} --> Title: {}\t\n\tDescription: {}\n".format(i + 1,
-                                                                 top_headlines["articles"][i]["title"],
-                                                                 top_headlines["articles"][i]["description"]))
-            sleep(2.5)
-
-    def getTopHeadlinesByCategory(self):
-        category = ["business", "entertainment", "general", "health", "science", "sports", "technology"]
-
-        for i in range(7):
-            print("{}. {}".format(i + 1, category[i].capitalize()))
-
-        select_category = int(input("Enter option:\t"))
 
         try:
-            categorized_headline_url = "https://newsapi.org/v2/top-headlines?country=in&apiKey={}&category={}".format(
-                self.api_key, category[select_category - 1])
-            top_headlines = requests.get(categorized_headline_url).json()
+            url = f"https://newsapi.org/v2/top-headlines?country={self.country}&apiKey={self.api_key}&pageSize=100"
+            headlines = requests.get(url).json()
 
-            print("Total Results:  ", top_headlines["totalResults"])
+            total_number_of_news = headlines["totalResults"]
+            
+            print("Total Results: ", total_number_of_news)
+            number_of_news_to_print = int(input("How many number of news you want: "))
 
-            number_of_articles_to_print = int(input("Enter number of articles to print:\t"))
+            if (number_of_news_to_print > total_number_of_news):
+                print("Please enter a valid number!")
 
-            for i in range(number_of_articles_to_print):
-                print("{} --> Title: {}\t\n\tDescription: {}\n".format(i + 1,
-                                                                     top_headlines["articles"][i]["title"],
-                                                                     top_headlines["articles"][i]["description"]))
-                sleep(2.5)
-
-        except IndexError as indexError:
-            print("Invalid Option !")
-
+            else :
+                for i in range(number_of_news_to_print):
+                    print(f"""{i + 1} --> Title: {headlines["articles"][i]["title"]}\n\tDescription: {headlines["articles"][i]["description"]}\n\tSource: {headlines["articles"][i]["source"]["name"]}\n\tLink: {headlines["articles"][i]["url"]}\n""")
+        
         except requests.exceptions.ConnectionError as connectionError:
-            print("Check Internet Connection! Try Again Later")
-
-    def getNewsByQuery(self):
-        try:
-            from_date = (datetime.now() - timedelta(1)).strftime("%Y-%m-%d")
-            to_date = datetime.now().strftime("%Y-%m-%d")
-            query = input("Enter a query:\t")
-
-            url = "https://newsapi.org/v2/everything?q={}&apiKey={}&from={}&to={}&sortBy={}".format(query, self.api_key,
-                                                                                            from_date, to_date,
-                                                                                              "popularity")
-            news = requests.get(url).json()
-
-            print("Total Results: ", news["totalResults"])
-            number_of_articles_to_print = int(input("Enter number of articles to print:\t"))
-
-            for i in range(number_of_articles_to_print):
-                print("{} --> Title: {}\n\t Description: {}\n".format(i + 1,
-                                                                    news["articles"][i]["title"],
-                                                                    news["articles"][i]["description"]))
-                sleep(2.5)
-
-        except requests.exceptions.ConnectionError as connectionError:
-            print("Check Internet Connection! Try Again Later")
-
-        except Exception as e:
-            print(e)
-
+            print("Please check your Internet Connection!")
 
 if __name__ == "__main__":
-    
-    try:
-        obj = NewsAggregator()
-        obj.getApiKey()
-        obj.storeApiKey()
 
-        print("1. Get Top News")
-        print("2. Get Categorized News")
-        print("3. Search News By Query")
-        print("4. Quit")
+    try:
+        news_object = NewsAggregator()
+        news_object.getApiKey()
+        news_object.storeApiKey()
+
+        print("1. Get Top Headlines")
+        print("2. Get Categorized Headlines")
+        print("3. Search by query")
+        print("4. Change Country")
+        print("5. Quit")
 
         while True:
-
-            option = int(input("Enter your choice:\t"))
+            option = int(input("Enter your option: "))
 
             if option == 1:
-                obj.getTopHeadline()
-
-            elif option == 2:
-                obj.getTopHeadlinesByCategory()
-
-            elif option == 3:
-                obj.getNewsByQuery()
+                news_object.getTopHeadline()
 
             elif option == 4:
-                print("Exiting !")
-                break
+                news_object.setCountry()
 
+            elif option == 5:
+                print("Exiting!")
+                exit()
+                
+    except KeyboardInterrupt as keyboardInterrupt:
+        print("Quit!")
+    
     except ValueError as valueError:
-        print("Invalid Input!")
+        print("Invalid Option!")
