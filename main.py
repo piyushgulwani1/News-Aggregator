@@ -56,14 +56,44 @@ class NewsAggregator:
             number_of_news_to_print = int(input("How many number of news you want: "))
 
             if (number_of_news_to_print > total_number_of_news):
-                print("Please enter a valid number!")
+                print("Please enter a valid number!\n")
 
             else :
                 for i in range(number_of_news_to_print):
                     print(f"""{i + 1} --> Title: {headlines["articles"][i]["title"]}\n\tDescription: {headlines["articles"][i]["description"]}\n\tSource: {headlines["articles"][i]["source"]["name"]}\n\tLink: {headlines["articles"][i]["url"]}\n""")
+                    sleep(5)
         
         except requests.exceptions.ConnectionError as connectionError:
-            print("Please check your Internet Connection!")
+            print("Please check your Internet Connection!\n")
+
+
+    def getCategorizedHeadlines(self):
+
+        try:
+            categories = ["business", "entertainment", "general", "health", "science", "sports", "technology"]
+            for i in range(7):
+                print(f"{i + 1}. {categories[i].capitalize()}")
+
+            categorySelected = int(input("Enter your choice: "))
+
+            url = f"https://newsapi.org/v2/top-headlines?country={self.country}&apiKey={self.api_key}&pageSize=100&category={categories[categorySelected - 1]}"
+
+            categorizedHeadline = requests.get(url).json()
+            total_number_of_news = categorizedHeadline["totalResults"]
+
+            print(f"Total Results: {total_number_of_news}\n")
+
+            number_of_news_to_print = int(input("How many news do you want: "))
+
+            if (number_of_news_to_print > total_number_of_news):
+                print("Please enter a valid number!\n")
+            
+            else:
+                for i in range(number_of_news_to_print):
+                    print(f"""{i + 1} --> Title: {categorizedHeadline["articles"][i]["title"]}\n\tDescription: {categorizedHeadline["articles"][i]["description"]}\n\tSource: {categorizedHeadline["articles"][i]["source"]["name"]}\n\tLink: {categorizedHeadline["articles"][i]["url"]}\n""")
+
+        except requests.exceptions.ConnectionError as connectionError:
+            print("Please check your Internet Connection!\n")
 
 if __name__ == "__main__":
 
@@ -76,7 +106,7 @@ if __name__ == "__main__":
         print("2. Get Categorized Headlines")
         print("3. Search by query")
         print("4. Change Country")
-        print("5. Quit")
+        print("5. Quit\n")
 
         while True:
             option = int(input("Enter your option: "))
@@ -84,15 +114,18 @@ if __name__ == "__main__":
             if option == 1:
                 news_object.getTopHeadline()
 
+            elif option == 2:
+                news_object.getCategorizedHeadlines()
+
             elif option == 4:
                 news_object.setCountry()
 
             elif option == 5:
                 print("Exiting!")
                 exit()
-                
+
     except KeyboardInterrupt as keyboardInterrupt:
-        print("Quit!")
+        print("\nQuit!")
     
     except ValueError as valueError:
         print("Invalid Option!")
