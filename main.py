@@ -10,6 +10,7 @@ class NewsAggregator:
         self.api_key = None
         self.client = None
         self.country = "in" #Default
+        self.page_size = 100000
 
     def getApiKey(self):
         try:
@@ -47,7 +48,7 @@ class NewsAggregator:
     def getTopHeadline(self):
 
         try:
-            url = f"https://newsapi.org/v2/top-headlines?country={self.country}&apiKey={self.api_key}&pageSize=100"
+            url = f"https://newsapi.org/v2/top-headlines?country={self.country}&apiKey={self.api_key}&pageSize={self.page_size}"
             headlines = requests.get(url).json()
 
             total_number_of_news = headlines["totalResults"]
@@ -76,7 +77,7 @@ class NewsAggregator:
 
             categorySelected = int(input("Enter your choice: "))
 
-            url = f"https://newsapi.org/v2/top-headlines?country={self.country}&apiKey={self.api_key}&pageSize=100&category={categories[categorySelected - 1]}"
+            url = f"https://newsapi.org/v2/top-headlines?country={self.country}&apiKey={self.api_key}&pageSize={self.page_size}&category={categories[categorySelected - 1]}"
 
             categorizedHeadline = requests.get(url).json()
             total_number_of_news = categorizedHeadline["totalResults"]
@@ -95,6 +96,32 @@ class NewsAggregator:
         except requests.exceptions.ConnectionError as connectionError:
             print("Please check your Internet Connection!\n")
 
+    def getNewsByQuery(self):
+
+        try:
+            start_date = (datetime.now() - timedelta(2)).strftime("%Y-%m-%d")
+        
+            query = input("Enter query:\t")
+            url = f"https://newsapi.org/v2/everything?q={query}&apiKey={self.api_key}&pageSize={self.page_size}&from={start_date}"
+
+            news = requests.get(url).json()
+            print(news)
+            total_number_of_news = news["totalResults"]
+
+            print("Total Results: ", total_number_of_news)
+            number_of_news_to_print = int(input("How many news do you want: "))
+
+            if (number_of_news_to_print > total_number_of_news):
+                    print("Please enter a valid number!\n")
+                
+            else:
+                for i in range(number_of_news_to_print):
+                    print(f"""{i + 1} --> Title: {news["articles"][i]["title"]}\n\tDescription: {news["articles"][i]["description"]}\n\tSource: {news["articles"][i]["source"]["name"]}\n\tLink: {news["articles"][i]["url"]}\n""")
+
+        except requests.exceptions.ConnectionError as connectionError:
+            print("Please check your Internet Connection!\n")
+
+        
 if __name__ == "__main__":
 
     try:
@@ -117,6 +144,9 @@ if __name__ == "__main__":
             elif option == 2:
                 news_object.getCategorizedHeadlines()
 
+            elif option == 3:
+                news_object.getNewsByQuery()
+
             elif option == 4:
                 news_object.setCountry()
 
@@ -127,5 +157,5 @@ if __name__ == "__main__":
     except KeyboardInterrupt as keyboardInterrupt:
         print("\nQuit!")
     
-    except ValueError as valueError:
-        print("Invalid Option!")
+    except Exception as e:
+        print(e)
